@@ -1,10 +1,6 @@
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "src/model.h"
-#include "src/view.h"
-#include "src/controller.h"
 #include "raylib/src/raylib.h"
 
 #define TERMINAL_YELLOW "\033[0;33m"
@@ -36,7 +32,7 @@ TODO:
     [
         A. Need to change the grid for the use that he will be able to see his yellow shoot(2) and the the empty cells(0) -> DONE
     ]
-9) When the fight start, need to update the "The board is of player...".
+9) When the fight start, need to update the "The board is of player...". -> DONE
 
 ============================================
 */
@@ -61,7 +57,7 @@ char IsSubmarinePositionOk(int x, int y, int grid_diffe[COLS][ROWS], char is_ver
 void DrawScore(int score_a, int score_b);
 void ChooseDirection(int is_vertical);
 void ChangeDirection(char *is_vertical);
-void ShootOnSubmarine(int grid_diffe[COLS][ROWS], char *flip_turn, Sound shoot_sound);
+void ShootOnSubmarine(int grid_diffe[COLS][ROWS], char *flip_turn, Sound shoot_sound, Sound click_sound);
 void CheckForWin(int player_1[COLS][ROWS], int player_2[COLS][ROWS], Sound game_over_sound, char *game_not_over);
 void DrawWhoPlay(char which_player_is);
 void DrawWelcomeMessage(char *welcome_message);
@@ -97,12 +93,12 @@ int main()
     Sound game_over_sound = LoadSound("./resources/mixkit-arcade-retro-game-over-213.wav");
     Sound click_sound = LoadSound("./resources/mixkit-video-game-retro-click-237.wav");
     Sound shoot_sound = LoadSound("./resources/plasma-gun-fire-162136.mp3");
-    // PlaySound(welcome_sound);
+    PlaySound(welcome_sound);
 
     int grid[COLS][ROWS];
     int player_1[COLS][ROWS];
     int player_2[COLS][ROWS];
-    int max_size_submarine = 2;
+    int max_size_submarine = 5;
     char is_vertical = 1;
     int *amount_of_submarines, amount_of_submarines_cells = 0, index = 0, j = 0, turn_indication = 0;
     char flip_turn = 1, game_not_over = 1, welcome_message = 1, is_fight_started = 0, switch_grid_click = 0;
@@ -157,7 +153,7 @@ int main()
                                 DrawPlayerGrid(!flip_turn ? player_1 : player_2);
                             } else {
                                 CellDiffeDraw(flip_turn ? player_1 : player_2, is_fight_started, &flip_turn);
-                                ShootOnSubmarine(flip_turn ? player_1 : player_2, &flip_turn, shoot_sound);
+                                ShootOnSubmarine(flip_turn ? player_1 : player_2, &flip_turn, shoot_sound, click_sound);
                             }
                         }
                         CheckForWin(player_1, player_2, game_over_sound, &game_not_over);
@@ -207,21 +203,23 @@ void CellDiffeDraw(int grid_diffe[COLS][ROWS], char is_fight_started, char *flip
 {
     int x;
     int y;
+    Color color;
     for (int i = 0; i < COLS; i++) {
         for (int j = 0; j < ROWS; j++) {
             if (grid_diffe[i][j] == 1 && !is_fight_started) {
                 x = j * CELL_WIDTH;
                 y = i * CELL_HEIGHT;
-                DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, BLUE);
-            } else if (grid_diffe[i][j] == 2 && !is_fight_started) {
+                color = BLUE;
+            } else if (grid_diffe[i][j] == 2) {
                 x = j * CELL_WIDTH;
                 y = i * CELL_HEIGHT;
-                DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, RED);
-            } else if (grid_diffe[i][j] == 3) {
+                color = RED;
+            }  else if (grid_diffe[i][j] == 3) {
                 x = j * CELL_WIDTH;
                 y = i * CELL_HEIGHT;
-                DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, YELLOW);
+                color = YELLOW;
             }
+            DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, color);
         }
     }
 }
@@ -440,7 +438,7 @@ void ChangeDirection(char *is_vertical)
     else if (IsKeyDown(KEY_LEFT)) *is_vertical = 0;
 }
 
-void ShootOnSubmarine(int grid_diffe[COLS][ROWS], char *flip_turn, Sound shoot_sound)
+void ShootOnSubmarine(int grid_diffe[COLS][ROWS], char *flip_turn, Sound shoot_sound, Sound click_sound)
 {
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         Vector2 mPos = GetMousePosition();
@@ -448,13 +446,17 @@ void ShootOnSubmarine(int grid_diffe[COLS][ROWS], char *flip_turn, Sound shoot_s
         int y = mPos.y / CELL_HEIGHT;
 
         if (x >= 0 && x < COLS && y >= 0 && y < ROWS) {
+            Color color = BLACK;
             if (grid_diffe[y][x] == 1) {
                 grid_diffe[y][x] = 2;
-            }
-            else if (!grid_diffe[y][x]) {
+                color = RED;
+                PlaySound(shoot_sound);
+            } else if (!grid_diffe[y][x]) {
                 grid_diffe[y][x] = 3;
+                color = YELLOW;
+                PlaySound(click_sound);
             }
-            // PlaySound(shoot_sound);
+            DrawRectangle(x * CELL_WIDTH, y * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT, color);
             *flip_turn ? *flip_turn = 0 : (*flip_turn = 1);
         }
     }
@@ -510,7 +512,7 @@ void DrawWelcomeMessage(char *welcome_message)
 
     if (IsKeyDown(KEY_ENTER)) *welcome_message = 0;
 
-    char font_size= 25;
+    char font_size = 25;
     Vector2 msg_1_length = MeasureTextEx(GetFontDefault(), msg_1, font_size*2, 1.0f);
     Vector2 msg_2_length = MeasureTextEx(GetFontDefault(), msg_2, font_size, 1.0f);
     Vector2 msg_3_length = MeasureTextEx(GetFontDefault(), msg_3, font_size*1.2f, 1.0f);
@@ -532,19 +534,17 @@ void DrawPlayerGrid(int grid_diffe[COLS][ROWS])
                 x = j * CELL_WIDTH;
                 y = i * CELL_HEIGHT;
                 color = BLUE;
-                DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, color);
             } else if (grid_diffe[i][j] == 2) {
                 x = j * CELL_WIDTH;
                 y = i * CELL_HEIGHT;
                 color = RED;
-                DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, color);
             }
             else if (grid_diffe[i][j] == 3) {
                 x = j * CELL_WIDTH;
                 y = i * CELL_HEIGHT;
                 color = YELLOW;
-                DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, color);
             }
+            DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, color);
         }
     }
 }
