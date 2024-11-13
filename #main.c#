@@ -35,8 +35,8 @@ TODO:
 8) Need to change the grid in the fight.
     [
         A. Need to change the grid for the use that he will be able to see his yellow shoot(2) and the the empty cells(0) -> DONE
+        B. Need to create a mini grid for the user that he will be able to see his grid when the turn is of him.
     ]
-9) When the fight start, need to update the "The board is of player...".
 
 ============================================
 */
@@ -102,7 +102,7 @@ int main()
     int grid[COLS][ROWS];
     int player_1[COLS][ROWS];
     int player_2[COLS][ROWS];
-    int max_size_submarine = 2;
+    int max_size_submarine = 5;
     char is_vertical = 1;
     int *amount_of_submarines, amount_of_submarines_cells = 0, index = 0, j = 0, turn_indication = 0;
     char flip_turn = 1, game_not_over = 1, welcome_message = 1, is_fight_started = 0, switch_grid_click = 0;
@@ -148,15 +148,16 @@ int main()
                     }
                     else if (turn_indication > (amount_of_submarines_cells*2)) {
                         is_fight_started = 1;
+                        int (*player)[] = flip_turn ? player_1 : player_2;
                         if (game_not_over) {
 
                             if (IsKeyDown(KEY_SPACE)) switch_grid_click = 1;
                             else switch_grid_click = 0;
 
                             if (switch_grid_click) {
-                                DrawPlayerGrid(!flip_turn ? player_1 : player_2);
+                                DrawPlayerGrid(player);
                             } else {
-                                CellDiffeDraw(flip_turn ? player_1 : player_2, is_fight_started, &flip_turn);
+                                CellDiffeDraw(player, is_fight_started, &flip_turn);
                                 ShootOnSubmarine(flip_turn ? player_1 : player_2, &flip_turn, shoot_sound);
                             }
                         }
@@ -213,11 +214,7 @@ void CellDiffeDraw(int grid_diffe[COLS][ROWS], char is_fight_started, char *flip
                 x = j * CELL_WIDTH;
                 y = i * CELL_HEIGHT;
                 DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, BLUE);
-            } else if (grid_diffe[i][j] == 2 && !is_fight_started) {
-                x = j * CELL_WIDTH;
-                y = i * CELL_HEIGHT;
-                DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, RED);
-            } else if (grid_diffe[i][j] == 3) {
+            }  else if (grid_diffe[i][j] == 3) {
                 x = j * CELL_WIDTH;
                 y = i * CELL_HEIGHT;
                 DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, YELLOW);
@@ -532,19 +529,17 @@ void DrawPlayerGrid(int grid_diffe[COLS][ROWS])
                 x = j * CELL_WIDTH;
                 y = i * CELL_HEIGHT;
                 color = BLUE;
-                DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, color);
             } else if (grid_diffe[i][j] == 2) {
                 x = j * CELL_WIDTH;
                 y = i * CELL_HEIGHT;
                 color = RED;
-                DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, color);
             }
             else if (grid_diffe[i][j] == 3) {
                 x = j * CELL_WIDTH;
                 y = i * CELL_HEIGHT;
-                color = YELLOW;
-                DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, color);
+                color  = YELLOW;
             }
+            DrawRectangle(x, y, CELL_WIDTH, CELL_HEIGHT, color);
         }
     }
 }
